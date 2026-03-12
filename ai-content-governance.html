@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prototype - AI Content Governance Framework</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    color: #1a1a1a;
+    background: #f5f5f5;
+    padding: 2rem 1rem;
+  }
+
+  .container {
+    max-width: 760px;
+    margin: 0 auto;
+    background: #ffffff;
+    border: 1px solid #cccccc;
+    border-radius: 8px;
+    padding: 2.5rem;
+  }
+
+  /* Header */
+  .doc-header {
+    border-bottom: 2px solid #333333;
+    padding-bottom: 1.25rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .doc-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: #888888;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+
+  .doc-title {
+    font-size: 22px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 6px;
+  }
+
+  .doc-subtitle {
+    font-size: 13px;
+    color: #666666;
+  }
+
+  /* Section labels */
+  .section-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: #888888;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 12px;
+  }
+
+  /* Triage block */
+  .triage-block {
+    background: #f9f9f9;
+    border: 1px solid #cccccc;
+    border-radius: 6px;
+    padding: 1.25rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .triage-description {
+    font-size: 13px;
+    color: #555555;
+    margin-bottom: 1rem;
+  }
+
+  select {
+    width: 100%;
+    font-size: 14px;
+    padding: 10px 12px;
+    border-radius: 5px;
+    border: 1px solid #aaaaaa;
+    background: #ffffff;
+    color: #1a1a1a;
+    appearance: none;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23666' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+  }
+
+  select:focus {
+    outline: none;
+    border-color: #444444;
+  }
+
+  /* Result panel */
+  .result-panel {
+    display: none;
+    margin-top: 1rem;
+    border-radius: 5px;
+    border: 1px solid #aaaaaa;
+    padding: 1rem 1.25rem;
+    background: #eeeeee;
+  }
+
+  .result-panel.visible { display: block; }
+
+  .result-tier-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 500;
+    border: 1px solid;
+    border-radius: 4px;
+    padding: 3px 8px;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .result-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 10px;
+  }
+
+  .result-steps {
+    font-size: 13px;
+    color: #333333;
+    padding-left: 1.2rem;
+    line-height: 1.7;
+  }
+
+  .result-steps li { margin-bottom: 4px; }
+
+  /* Divider */
+  .divider {
+    border: none;
+    border-top: 1px solid #dddddd;
+    margin: 1.75rem 0;
+  }
+
+  /* Tier cards */
+  .tier-card {
+    border: 1px solid #cccccc;
+    border-radius: 6px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    background: #ffffff;
+  }
+
+  .tier-card:last-of-type { margin-bottom: 0; }
+
+  .tier-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .tier-badge {
+    font-size: 11px;
+    font-weight: 500;
+    color: #333333;
+    background: #e0e0e0;
+    border: 1px solid #aaaaaa;
+    border-radius: 4px;
+    padding: 3px 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+  }
+
+  .tier-low  .tier-badge { background: #E8F4EA; color: #3D6B47; border-color: #A8CFA8; }
+  .tier-med  .tier-badge { background: #F5EDD8; color: #7A6030; border-color: #C4AA78; }
+  .tier-high .tier-badge { background: #F5E0D8; color: #7A3020; border-color: #C88070; }
+
+  .tier-description {
+    font-size: 13px;
+    color: #666666;
+  }
+
+  .content-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+
+  .tag {
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid;
+}
+
+  .review-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .review-row:last-child { margin-bottom: 0; }
+
+  .review-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    margin-top: 7px;
+    flex-shrink: 0;
+  }
+
+  .review-text {
+    font-size: 13px;
+    color: #444444;
+    line-height: 1.5;
+  }
+
+  /* Tier left-border accent (greyscale) */
+  .tier-low  { border-left: 4px solid #7CAE8A; background: #F6FAF6; color: #3D6B47; }
+  .tier-med  { border-left: 4px solid #C4AA78; background: #FBF8F2; color: #7A6030; }
+  .tier-high { border-left: 4px solid #B5604A; background: #FDF5F3; color: #7A3020; }
+
+  /* Principles */
+  .principle-row {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 12px;
+    align-items: flex-start;
+  }
+
+  .principle-row:last-child { margin-bottom: 0; }
+
+  .principle-num {
+    font-size: 12px;
+    font-weight: 600;
+    color: #888888;
+    min-width: 18px;
+    padding-top: 2px;
+  }
+
+  .principle-text {
+    font-size: 13px;
+    color: #444444;
+    line-height: 1.6;
+  }
+
+  .principle-text strong {
+    color: #1a1a1a;
+    font-weight: 600;
+  }
+
+  /* Footer */
+  .doc-footer {
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid #dddddd;
+    font-size: 11px;
+    color: #999999;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Header -->
+  <div class="doc-header">
+    <div class="doc-label">mtthw.ca / Working prototype</div>
+    <div class="doc-title">AI Content Governance Framework</div>
+    <div class="doc-subtitle">A practical guide for responsible AI-assisted content production for a company with fidicuary accountability. Not a policy document — a working tool.</div>
+  </div>
+
+  <!-- Triage -->
+  <div class="triage-block">
+    <div class="section-label">Content triage</div>
+    <div class="triage-description">Select a content type to see the required review path before publication.</div>
+    <select id="content-select" onchange="triage()">
+      <option value="">— Select a content type —</option>
+      <optgroup label="Tier 1 — Low risk">
+        <option value="low|internal-draft">Internal draft or working document</option>
+        <option value="low|social-idea">Social media idea or concept note</option>
+        <option value="low|research-summary">Internal research summary</option>
+        <option value="low|meeting-notes">Meeting notes or briefing prep</option>
+      </optgroup>
+      <optgroup label="Tier 2 — Medium risk">
+        <option value="med|social">Social media post (corporate account)</option>
+        <option value="med|exchange">Client Portal or Intranet article</option>
+        <option value="med|investment-education">Investment education content</option>
+        <option value="med|event-comms">Event or engagement communications</option>
+      </optgroup>
+      <optgroup label="Tier 3 — High risk">
+        <option value="high|annual-report">Corporate Annual Report</option>
+        <option value="high|stewardship">Stewardship Report</option>
+        <option value="high|client-comms">Client-facing communication</option>
+        <option value="high|regulatory">Regulatory or compliance submission</option>
+        <option value="high|media">Media statement or public affairs</option>
+      </optgroup>
+    </select>
+
+    <div id="result-panel" class="result-panel">
+      <div id="result-tier-badge" class="result-tier-badge"></div>
+      <div id="result-title" class="result-title"></div>
+      <ul id="result-steps" class="result-steps"></ul>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- Tier cards -->
+  <div class="section-label">Risk tiers at a glance</div>
+
+  <div class="tier-card tier-low">
+    <div class="tier-header">
+      <span class="tier-badge">Tier 1 — Low risk</span>
+      <span class="tier-description">AI can assist freely</span>
+    </div>
+    <div class="content-tags">
+      <span class="tag">Internal drafts</span>
+      <span class="tag">Research summaries</span>
+      <span class="tag">Briefing prep</span>
+      <span class="tag">Concept notes</span>
+    </div>
+    <div class="review-row"><div class="review-dot"></div><div class="review-text">Author reviews before sharing. No formal sign-off required.</div></div>
+    <div class="review-row"><div class="review-dot"></div><div class="review-text">Accuracy spot-check encouraged. Brand voice applies.</div></div>
+  </div>
+
+  <div class="tier-card tier-med">
+    <div class="tier-header">
+      <span class="tier-badge">Tier 2 — Medium risk</span>
+      <span class="tier-description">Human review required</span>
+    </div>
+    <div class="content-tags">
+      <span class="tag">Social (corporate)</span>
+      <span class="tag">Client Portal</span>
+      <span class="tag">Intranet</span>
+      <span class="tag">Investment education</span>
+      <span class="tag">Event comms</span>
+    </div>
+    <div class="review-row"><div class="review-dot"></div><div class="review-text">Reviewed by content lead for accuracy, brand voice, and source verification before publication.</div></div>
+    <div class="review-row"><div class="review-dot"></div><div class="review-text">All factual claims traced to primary sources. No AI-generated citations accepted without verification.</div></div>
+    <div class="review-row"><div class="review-dot"></div><div class="review-text">Manager sign-off required if content touches investment performance or ESG positioning.</div></div>
+  </div>
+
+  <div class="tier-card tier-high">
+    <div class="tier-header">
+      <span class="tier-badge">Tier 3 — High risk</span>
+      <span class="tier-description">Senior authority required</span>
+    </div>
+    <div class="content-tags">
+      <span class="tag">Annual Report</span>
+      <span class="tag">Stewardship Report</span>
+      <span class="tag">Client communications</span>
+      <span class="tag">Media statements</span>
+      <span class="tag">Regulatory submissions</span>
+    </div>
+    <div class="review-row"><div class="review-dot"></div><div class="review-text">AI may assist with drafting only. No AI-generated content published without full human authorship review.</div></div>
+    <div class="review-row"><div class="review-dot"></div><div class="review-text">Legal and/or Compliance review required prior to publication. Investment accuracy verified by subject matter authority.</div></div>
+    <div class="review-row"><div class="review-dot"></div><div class="review-text">VP, Communications sign-off required. Disclosure standards documented and on file.</div></div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- Governing principles -->
+  <div class="section-label">Governing principles</div>
+
+  <div class="principle-row">
+    <div class="principle-num">1</div>
+    <div class="principle-text"><strong>AI assists, humans decide.</strong> No AI output is published into a high-stakes context without qualified human review. The goal is to extend judgement, not replace it.</div>
+  </div>
+  <div class="principle-row">
+    <div class="principle-num">2</div>
+    <div class="principle-text"><strong>Risk scales with audience and consequence.</strong> Internal use carries low risk. Client-facing and compliance-adjacent content carries high risk. Classification determines the review path, not the tool used.</div>
+  </div>
+  <div class="principle-row">
+    <div class="principle-num">3</div>
+    <div class="principle-text"><strong>Sources must be traceable.</strong> All factual claims in Tier 2 and Tier 3 content must trace back to a verified primary source. AI-generated citations are not accepted without independent verification.</div>
+  </div>
+  <div class="principle-row">
+    <div class="principle-num">4</div>
+    <div class="principle-text"><strong>Governance enables adoption.</strong> This framework is designed to give the team confidence to use AI tools — not to restrict them. Clear rules remove hesitation and protect the organization from preventable risk.</div>
+  </div>
+  <div class="principle-row">
+    <div class="principle-num">5</div>
+    <div class="principle-text"><strong>The framework evolves.</strong> AI tools and regulatory expectations are moving quickly. This framework is reviewed quarterly and updated as the company's AI adoption matures.</div>
+  </div>
+
+  <!-- Footer -->
+  <div class="doc-footer">
+    <span>AI Content Governance Framework / Working prototype</span>
+    <span>Matthew Miller - <a href="mailto:matthew@mtthw.ca" style="color: #5B8DB8;">mtthwmllr@gmail.com</a> - &copy; 2026</span>
+  </div>
+
+</div>
+
+<script>
+  var resultData = {
+    "low|internal-draft": {
+      tier: "Tier 1 — Low risk",
+      title: "Internal draft or working document",
+      steps: [
+        "AI can assist freely with drafting, summarizing, or restructuring.",
+        "Author reviews output before sharing with colleagues.",
+        "No formal sign-off required.",
+        "Brand voice applies — review for tone before circulating widely."
+      ]
+    },
+    "low|social-idea": {
+      tier: "Tier 1 — Low risk",
+      title: "Social media concept note",
+      steps: [
+        "AI can assist with idea generation and initial drafting.",
+        "Author reviews before presenting concept to content lead.",
+        "Note: if concept proceeds to a corporate social media post, it moves to Tier 2 review."
+      ]
+    },
+    "low|research-summary": {
+      tier: "Tier 1 — Low risk",
+      title: "Internal research summary",
+      steps: [
+        "AI can assist with summarizing source material.",
+        "Author verifies that key claims reflect the source accurately before sharing.",
+        "Not for external distribution without escalating to Tier 2 or Tier 3 review."
+      ]
+    },
+    "low|meeting-notes": {
+      tier: "Tier 1 — Low risk",
+      title: "Meeting notes or briefing prep",
+      steps: [
+        "AI can assist freely with transcription, summarizing, and structuring.",
+        "Author reviews for accuracy before distributing to attendees.",
+        "No sign-off required."
+      ]
+    },
+    "med|social": {
+      tier: "Tier 2 — Medium risk",
+      title: "Social media post (corporate account)",
+      steps: [
+        "AI may assist with drafting. Human author retains full ownership of content.",
+        "Content lead reviews for brand voice, accuracy, and tone before scheduling.",
+        "All factual claims verified against primary sources — no AI-generated statistics without confirmation.",
+        "Manager sign-off required if post references investment performance or ESG positioning.",
+        "Published via approved channel management workflow only."
+      ]
+    },
+    "med|exchange": {
+      tier: "Tier 2 — Medium risk",
+      title: "Client Portal or Intranet article",
+      steps: [
+        "AI may assist with drafting and structural editing.",
+        "Content lead reviews for accuracy, source integrity, and brand alignment.",
+        "Investment-related claims reviewed by subject matter contributor before publication.",
+        "Manager sign-off required before publishing to internal channels."
+      ]
+    },
+    "med|investment-education": {
+      tier: "Tier 2 — Medium risk",
+      title: "Investment education content",
+      steps: [
+        "AI may assist with plain-language drafting and structuring.",
+        "All investment figures and performance references verified against the company's published reports.",
+        "Content lead and one investment subject matter reviewer sign off before distribution.",
+        "Legal review recommended for content that makes forward-looking statements."
+      ]
+    },
+    "med|event-comms": {
+      tier: "Tier 2 — Medium risk",
+      title: "Event or engagement communications",
+      steps: [
+        "AI may assist with drafting invitations, run-of-show copy, and post-event summaries.",
+        "Content lead reviews for accuracy, tone, and alignment with event objectives.",
+        "Any content referencing clients, beneficiaries, or company financials escalates to Tier 3."
+      ]
+    },
+    "high|annual-report": {
+      tier: "Tier 3 — High risk",
+      title: "Corporate Annual Report",
+      steps: [
+        "AI may assist with structural drafting only — no AI-generated content published without full human authorship review.",
+        "All financial figures, performance data, and benchmarks verified by Finance and Investment teams.",
+        "Legal and Compliance review required prior to publication.",
+        "VP, Communications final sign-off required.",
+        "AI usage documented and disclosure standards noted on file."
+      ]
+    },
+    "high|stewardship": {
+      tier: "Tier 3 — High risk",
+      title: "Stewardship Report",
+      steps: [
+        "AI may assist with drafting only. All ESG claims verified against the company's documented stewardship activity.",
+        "Responsible Investment team reviews all climate, governance, and engagement references.",
+        "Legal and Compliance sign-off required.",
+        "VP, Communications final sign-off required before publication."
+      ]
+    },
+    "high|client-comms": {
+      tier: "Tier 3 — High risk",
+      title: "Client-facing communication",
+      steps: [
+        "AI may assist with initial drafting. Human author retains full ownership and accountability.",
+        "Content reviewed for accuracy against current company performance data and client relationship context.",
+        "Legal review required if communication references returns, projections, or contractual obligations.",
+        "VP, Communications or delegated Director sign-off required before sending."
+      ]
+    },
+    "high|regulatory": {
+      tier: "Tier 3 — High risk",
+      title: "Regulatory or compliance submission",
+      steps: [
+        "AI use in regulatory submissions is limited to drafting support only.",
+        "Every claim independently verified by the responsible author — no AI-generated content accepted without full human review.",
+        "Legal and Compliance lead authorship and sign-off required.",
+        "VP, Communications informed prior to submission."
+      ]
+    },
+    "high|media": {
+      tier: "Tier 3 — High risk",
+      title: "Media statement or public affairs",
+      steps: [
+        "AI may assist with drafting only. Communications lead holds full authorship responsibility.",
+        "All factual claims verified against current company data and approved messaging.",
+        "Legal review required for any statement referencing litigation, regulatory matters, or financial performance.",
+        "VP, Communications sign-off required before release."
+      ]
+    }
+  };
+
+function triage() {
+  var val = document.getElementById('content-select').value;
+  var panel = document.getElementById('result-panel');
+  if (!val) {
+    panel.classList.remove('visible');
+    return;
+  }
+  var d = resultData[val];
+
+  // Tier colour map
+  var tierStyles = {
+    'low':  { bg: '#F6FAF6', border: '#7CAE8A', badgeBg: '#E8F4EA', badgeColor: '#3D6B47', badgeBorder: '#A8CFA8' },
+    'med':  { bg: '#FBF8F2', border: '#C4AA78', badgeBg: '#F5EDD8', badgeColor: '#7A6030', badgeBorder: '#C4AA78' },
+    'high': { bg: '#FDF5F3', border: '#B5604A', badgeBg: '#F5E0D8', badgeColor: '#7A3020', badgeBorder: '#C88070' }
+  };
+
+  // Derive tier key from the content key (e.g. "low|internal-draft" → "low")
+  var tierKey = val.split('|')[0];
+  var s = tierStyles[tierKey];
+
+  // Apply colours to panel
+  panel.style.background = s.bg;
+  panel.style.borderColor = s.border;
+
+  // Apply colours to badge
+  var badge = document.getElementById('result-tier-badge');
+  badge.style.background = s.badgeBg;
+  badge.style.color = s.badgeColor;
+  badge.style.borderColor = s.badgeBorder;
+
+  badge.textContent = d.tier;
+  document.getElementById('result-title').textContent = d.title;
+  var ul = document.getElementById('result-steps');
+  ul.innerHTML = d.steps.map(function(s) { return '<li>' + s + '</li>'; }).join('');
+  panel.classList.add('visible');
+}
+
+</script>
+
+</body>
+</html>
